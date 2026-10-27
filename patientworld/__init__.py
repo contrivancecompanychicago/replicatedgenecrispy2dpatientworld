@@ -1,23 +1,24 @@
-"""PatientWorld package for version 0 risk analysis.
+"""PatientWorld package exports.
 
-This package provides a lightweight model for exploring relationships between
-smoking, alcohol consumption, and diabetes risk.
+This package includes the original transparent risk model and the newer
+machine-learning pipeline for prediabetes prediction.
 """
 
-from .risk_model import (
-    PatientRecord,
-    RiskSummary,
-    calculate_diabetes_risk,
-    summarize_population,
-    read_patients_csv,
+from .ml_pipeline import (
+    build_prediabetes_pipeline,
+    create_synthetic_dataset,
+    evaluate_model,
+    train_prediabetes_model,
 )
+from .facial_model import FacePrediabetesModel, train_face_model
 
 __all__ = [
-    "PatientRecord",
-    "RiskSummary",
-    "calculate_diabetes_risk",
-    "summarize_population",
-    "read_patients_csv",
+    "build_prediabetes_pipeline",
+    "create_synthetic_dataset",
+    "evaluate_model",
+    "train_prediabetes_model",
+    "FacePrediabetesModel",
+    "train_face_model",
 ]
 
-__version__ = "0.0.0"
+__version__ = "0.1.0"

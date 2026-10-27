@@ -2,53 +2,79 @@
 
 Version 0 prototype for modeling the relationship between smoking, alcohol use, and diabetes risk.
 
-This repository now includes an initial implementation that connects three health signals:
+This repository now includes a machine-learning pipeline for a more formal disease-risk model intended to predict prediabetes risk from smoking and alcohol exposure, with a research-oriented facial-model extension.
 
-- smoking exposure
-- alcohol intake
-- diabetes risk
+## Current status
 
-The project is intentionally lightweight and designed as an early-stage research and decision-support prototype. It does not replace clinical diagnosis or formal epidemiological modeling.
+- Version: 0.1.0 (research prototype)
+- Focus: prediabetes risk modeling from lifestyle exposures and optional face-derived features
+- Validation: train/validation split included in the workflow
+- Scope: exploratory risk modeling and method development, not clinical diagnosis
 
-## What is included
+## Repository goals
 
-- A small Python package for risk scoring
-- CSV-based analysis for patient or cohort records
-- A prototype summary report that highlights combined risk contributors
-- Sample patient data to test the workflow
+This project is designed to evolve in stages:
 
-## Project status
-
-- Status: version 0 (prototype / MVP)
-- Scope: exploratory health-risk linking
-- Intended use: education, prototyping, internal research, and extension toward larger datasets
+1. Transparent tabular risk scoring
+2. Machine-learning classification with train/validation split
+3. Formal disease-risk modeling for prediabetes prediction
+4. Facial-model extension using face embedding features when a dataset is available
 
 ## Quick start
+
+Generate a synthetic dataset and train a model:
+
+```bash
+python3 scripts/generate_training_data.py
+python3 scripts/train_prediabetes_model.py
+```
+
+You can also run the prototype CLI:
 
 ```bash
 python3 -m patientworld.cli --input examples/sample_patients.csv
 ```
 
-## Example output
+## Model workflow
 
-The tool reports:
+The ML workflow includes:
 
-- smoking burden score
-- alcohol burden score
-- diabetes risk score
-- combined association summary
-- cohort-level aggregate metrics
+- data generation for smoking, alcohol, and metabolic-risk signals
+- train/validation splitting with stratification
+- preprocessing for numeric and categorical variables
+- logistic regression classification for prediabetes prediction
+- optional facial embedding features in a fusion-style research model
 
-## Notes
+## Formal disease-risk model
 
-This prototype is informed by the general literature indicating that smoking and heavy alcohol use are associated with increased risk for metabolic and cardiovascular burden, and that diabetes risk rises when these exposures cluster with higher age, obesity, and other comorbid factors. It is not a validated clinical prediction model.
+The implemented model estimates the probability of prediabetes using exposures such as:
 
-## Repository goals
+- smoking exposure
+- alcohol use
+- age
+- BMI
+- sex
+- family history
+- optional face-derived features or embeddings
 
-This version is a starting point for building a more advanced patient-health model that can later include:
+The model is intentionally structured for extension to real healthcare datasets.
 
-- broader clinical datasets
-- machine-learning models
-- longitudinal patient tracking
-- subgroup analysis by age, sex, and diagnosis
-- integration with other risk factors
+## Important limitation
+
+This repository does not yet include a real clinical or facial-image dataset. The facial-model component is a research scaffold that can accept embeddings from a real image model when such data are available. It is not a validated clinical detector.
+
+## Directory structure
+
+- `patientworld/` — model and risk-scoring code
+- `scripts/` — dataset generation and training scripts
+- `examples/` — sample input files
+- `artifacts/` — trained models and metrics
+
+## Next steps
+
+The next layer would include:
+
+- real patient data imports and EHR schema mapping
+- external validation with temporal splits
+- calibration curves and clinical decision thresholds
+- a true face-image pipeline using embeddings from a pretrained vision model

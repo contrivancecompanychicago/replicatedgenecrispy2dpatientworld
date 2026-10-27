@@ -1,0 +1,31 @@
+from pathlib import Path
+
+import pandas as pd
+
+from patientworld.ml_pipeline import save_model, train_prediabetes_model, train_test_split_data
+
+
+def main() -> None:
+    data_path = Path("examples") / "prediabetes_full.csv"
+    if not data_path.exists():
+        from scripts.generate_training_data import main as generate
+
+        generate()
+
+    df = pd.read_csv(data_path)
+    train_df, val_df = train_test_split_data(df, test_size=0.2, random_state=42)
+    model, metrics = train_prediabetes_model(train_df, val_df)
+
+    artifact_dir = Path("artifacts")
+    artifact_dir.mkdir(exist_ok=True)
+    save_model(model, artifact_dir / "prediabetes_model.joblib")
+
+    print("Validation metrics:")
+    for key, value in metrics.items():
+        print(f"- {key}: {value:.4f}")
+
+
+if __name__ == "__main__":
+    main()
+
+
