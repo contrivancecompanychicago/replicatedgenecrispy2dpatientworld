@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+import argparse
+
+from . import __version__
+from .risk_model import read_patients_csv, summarize_population, summarize_record
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Version 0 prototype for linking smoking, alcohol use, and diabetes risk.",
+    )
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to a CSV file with patient records.",
+    )
+    args = parser.parse_args()
+
+    records = read_patients_csv(args.input)
+    if not records:
+        raise SystemExit("No patient records found in the input CSV file.")
+
+    print(f"Version: {__version__}")
+    print("Smoking / alcohol / diabetes risk overview\n")
+
+    for record in records:
+        summary = summarize_record(record)
+        print(
+            f"{summary.patient_id}: smoking={summary.smoking_score}, "
+            f"alcohol={summary.alcohol_score}, "
+            f"diabetes_risk={summary.diabetes_risk_score}, "
+            f"signal={summary.combined_risk_signal}"
+        )
+
+    cohort_summary = summarize_population(records)
+    print("\nCohort summary:")
+    for key, value in cohort_summary.items():
+        print(f"- {key}: {value}")
+
+
+if __name__ == "__main__":
+    main()
