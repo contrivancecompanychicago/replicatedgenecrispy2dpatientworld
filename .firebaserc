@@ -1,0 +1,158 @@
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { defineSecret } = require("firebase-functions/params");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
+
+exports.generateUICPAVLSInsight = onDocumentCreated(
+  {
+    document: "predictions/{predictionId}",
+    secrets: [geminiApiKey],
+  },
+  async (event) => {
+    const prediction = event.data?.data();
+    const predictionId = event.params.predictionId;
+
+    if (!prediction) {
+      console.log("No prediction payload found.");
+      return;
+    }
+
+    const patientId = prediction.patientId;
+    if (!patientId) {
+      console.log("Prediction missing patientId.");
+      return;
+    }
+
+    const patientSnap = await admin
+      .firestore()
+      .collection("patients")
+      .doc(patientId)
+      .get();
+
+    if (!patientSnap.exists) {
+      console.log(`No patient found for patientId=${patientId}`);
+      return;
+    }
+
+    const patient = patientSnap.data();
+
+    const prompt = `
+You are the UICPAVLS clinical support assistant for a patient risk assessment and education platform.
+
+Your role is to summarize risk indicators in plain language and provide evidence-based lifestyle guidance.
+
+Important rules:
+- Do not diagnose.
+- Do not prescribe treatment.
+- Do not replace a licensed clinician.
+- Keep the tone empathetic and nonjudgmental.
+- If severe symptoms are described, recommend contacting a clinician or emergency services.
+- Avoid medical jargon unless explained simply.
+
+Patient data:
+- Age: ${patient.age ?? "Missing data"}
+- Sex: ${patient.sex ?? "Missing data"}
+- BMI: ${patient.bmi ?? "Missing data"}
+- Smoking status: ${patient.smoking_status ?? "Missing data"}
+- Alcohol use per week: ${patient.alcohol_drinks_per_week ?? "Missing data"}
+- Sleep hours: ${patient.sleep_hours ?? "Missing data"}
+- Blood pressure: ${patient.blood_pressure ?? "Missing data"}
+- Waist circumference: ${patient.waist_circumference ?? "Missing data"}
+- Family history: ${patient.family_history ?? "Missing data"}
+
+Model result:
+- Predicted probability: ${prediction.predictedProbability ?? "Missing data"}
+- Predicted label: ${prediction.predictedLabel ?? "Missing data"}
+- Threshold: ${prediction.threshold ?? "Missing data"}
+
+Return output in the following format:
+1. Patient Summary
+2. Risk Signals Identified
+3. Lifestyle Advice
+4. Recommended Next Steps
+5. Missing Information Needed
+6. Safety Note
+
+Keep the explanation plain-language and easy to understand.
+`;
+
+    const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const summary = response.text();
+
+    await admin
+      .firestore()
+      .collection("insights")
+      .doc(predictionId)
+      .set({
+        predictionId,
+        patientId,
+        summary,
+        generatedAt: new Date().toISOString(),
+        modelVersion: "PatientWorld-v0.1.0",
+      });
+
+    console.log(`Saved Gemini insight for prediction ${predictionId}`);
+    return { ok: true, predictionId };
+  }
+);
+
+exports.generatePatientInsight = onDocumentCreated(
+  {
+    document: "patients/{patientId}",
+    secrets: [geminiApiKey],
+  },
+  async (event) => {
+    const patient = event.data?.data();
+    const patientId = event.params.patientId;
+
+    if (!patient) {
+      console.log("No patient payload found.");
+      return;
+    }
+
+    const prompt = `
+You are the UICPAVLS clinical support assistant.
+
+Explain the patient’s health risk factors in plain language.
+Do not diagnose or prescribe treatment.
+Keep the tone empathetic and clear.
+
+Patient data:
+- Age: ${patient.age ?? "Missing data"}
+- Sex: ${patient.sex ?? "Missing data"}
+- BMI: ${patient.bmi ?? "Missing data"}
+- Smoking status: ${patient.smoking_status ?? "Missing data"}
+- Alcohol use per week: ${patient.alcohol_drinks_per_week ?? "Missing data"}
+- Blood pressure: ${patient.blood_pressure ?? "Missing data"}
+- Sleep hours: ${patient.sleep_hours ?? "Missing data"}
+- Waist circumference: ${patient.waist_circumference ?? "Missing data"}
+- Family history: ${patient.family_history ?? "Missing data"}
+
+Return a short patient-friendly risk summary with a safety note.
+`;
+
+    const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const summary = response.text();
+
+    await admin.firestore().collection("insights").doc(patientId).set({
+      patientId,
+      summary,
+      generatedAt: new Date().toISOString(),
+      source: "patient-record-trigger",
+    });
+
+    console.log(`Saved patient insight for ${patientId}`);
+    return { ok: true, patientId };
+  }
+);
