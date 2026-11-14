@@ -1,4 +1,4 @@
-"""FastAPI backend for the PatientWorld model and Firestore persistence."""
+"""FastAPI backend for GENE CRISpy 0.2.0 and PatientWorld."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from patientworld.firebase_backend import PatientWorldFirestoreClient, predict_patient_record
 from patientworld.genecrispy_agent import GeneCrispyAgent
 
-app = FastAPI(title="UICPAVLS PatientWorld Backend", version="0.2.0")
+app = FastAPI(title="GENE CRISpy", version="0.2.0", description="GENE CRISpy genetic and molecular structure analysis API")
 
 _firebase_client: Optional[PatientWorldFirestoreClient] = None
 _genecrispy_agent = GeneCrispyAgent()
