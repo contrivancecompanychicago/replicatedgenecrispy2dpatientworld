@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from patientworld.firebase_backend import PatientWorldFirestoreClient, predict_patient_record
+from patientworld.genecrispy_agent import GeneCrispyAgent
 
-app = FastAPI(title="UICPAVLS PatientWorld Backend", version="0.1.0")
+app = FastAPI(title="UICPAVLS PatientWorld Backend", version="0.2.0")
 
 _firebase_client: Optional[PatientWorldFirestoreClient] = None
+_genecrispy_agent = GeneCrispyAgent()
 
 
 class PatientPayload(BaseModel):
@@ -41,6 +43,15 @@ class PredictionRequest(PatientPayload):
     threshold: Optional[float] = 0.5
 
 
+class GeneCrispyAnalysisRequest(BaseModel):
+    """Sequence or coordinate text to analyze locally."""
+
+    content: str = Field(..., min_length=1, description="FASTA sequence or PDB coordinate text")
+    input_format: Literal["auto", "fasta", "pdb"] = Field(
+        default="auto", description="Input format, or auto-detect FASTA/PDB"
+    )
+
+
 @app.on_event("startup")
 def startup() -> None:
     global _firebase_client
@@ -56,6 +67,15 @@ def startup() -> None:
 @app.get("/health")
 def health() -> Dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/genecrispy/analyze")
+def analyze_genecrispy(payload: GeneCrispyAnalysisRequest) -> Dict[str, Any]:
+    """Return a descriptive FASTA or PDB summary; input is not persisted."""
+    try:
+        return _genecrispy_agent.analyze(payload.content, input_format=payload.input_format)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/predict")
@@ -104,4 +124,4 @@ def predict_and_save(payload: PredictionRequest) -> Dict[str, Any]:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend:app", host="0.0.0.0", port=8000, reload=True)
