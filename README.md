@@ -1,240 +1,253 @@
-# PatientWorld + UICPAVLS Firebase Integration
+# GENE CRISpy 0.2.0
 
-This repository contains the PatientWorld risk-modeling package and a Firebase/Firestore-ready backend integration for the UICPAVLS project.
+GENE CRISpy is a Python package and local analysis service for descriptive analysis of genetic sequence text and molecular structure coordinate text.
 
-The project combines:
-- PatientWorld Python ML workflow for patient risk prediction
-- Firestore as the database layer for patient records and prediction results
-- Gemini as the natural-language explanation layer for patient summaries and risk education
-- Firebase Functions and/or a lightweight backend API for orchestration
+This repository combines:
+- GENE CRISpy, an installable Python package for FASTA and PDB analysis
+- PatientWorld compatibility utilities for a patient risk-modeling workflow
+- a FastAPI backend exposing the analysis endpoint locally
+- optional Firebase/Firestore integration for broader application use
+- a Colab-ready quickstart workflow for running the project in a hosted notebook environment
 
-This repository is designed for a clinical or care-support workflow where patient data can be stored in Firestore, scored by the PatientWorld model, and summarized by Gemini in patient-friendly language.
+The project is intended for research and descriptive analysis only. It does not diagnose, recommend treatment, or provide clinical interpretation.
 
-Project goals:
-- keep the Python model logic in this repository
-- keep Firestore as the backend data store
-- use Firebase Functions to trigger Gemini summaries when new prediction records are created
-- provide a structure that can be connected to a Firebase app or a web/mobile frontend
+## Project status
 
-## Repository overview
+- Package name: genecrispy
+- Version: 0.2.0
+- API title: GENE CRISpy
+- API version: 0.2.0
+- Python requirement: 3.10+
 
-The package includes ML utilities for:
-- loading and normalizing cohort data
-- creating a synthetic dataset
-- training a prediabetes risk model
-- calibrating probability models
-- scoring patient records
-- exporting model artifacts
+## Repository layout
 
-Core modules:
-- patientworld/cli.py — primary ML pipeline and patient data handling
-- patientworld/facial_model.py — face-feature model experiments
-- patientworld/ml_pipeline.py — compatibility layer and workflow access
-- patientworld/firebase_backend.py — Firestore-ready model and patient helpers
-- backend/main.py — FastAPI backend for prediction endpoints
-- backend/__init__.py — backend package entrypoint
+- genecrispy/ — installable Python package
+- patientworld/ — PatientWorld ML utilities and compatibility layer
+- backend/ — FastAPI application
+- tests/ — unit and API tests
+- docs/ — usage and reference guides
+- notebooks/ — Colab notebook quickstart
+- requirements.txt — base Python dependencies
+- pyproject.toml — package metadata and build configuration
 
-## Architecture
+## Install from the repo
 
-The recommended architecture for UICPAVLS is:
+Install the package in editable mode:
 
-1. Patient data is stored in Firestore
-2. The backend reads patient data and runs the PatientWorld model
-3. Prediction records are saved into Firestore
-4. A Firestore trigger calls Gemini
-5. Gemini produces a patient-friendly summary and stores it in Firestore
-6. The frontend app reads the summary for display
+```bash
+python -m pip install -e .
+```
 
-This is the intended flow:
+Install the optional API and test dependencies:
 
-- patients/collection
-- predictions/collection
-- insights/collection
+```bash
+python -m pip install -e ".[api,test]"
+```
 
-## Firestore schema
+## Python usage
 
-Recommended collections:
+```python
+from genecrispy import GeneCrispyAgent, __version__
 
-patients/{patientId}
-- age
-- sex
-- bmi
-- smoking_status
-- alcohol_drinks_per_week
-- sleep_hours
-- blood_pressure
-- waist_circumference
-- family_history
-- createdAt
+agent = GeneCrispyAgent()
+print(__version__)  # 0.2.0
 
-predictions/{predictionId}
-- patientId
-- predictedProbability
-- predictedLabel
-- threshold
-- source
-- createdAt
+result = agent.analyze(">sample_gene\nACGTGC\n")
+print(result)
+```
 
-insights/{predictionId}
-- patientId
-- predictionId
-- summary
-- generatedAt
-- modelVersion
+You can also specify the parser explicitly:
 
-## Gemini prompt for UICPAVLS
+```python
+result = agent.analyze(">sample_gene\nACGTGC\n", input_format="fasta")
+```
 
-The recommended Gemini prompt is:
+For PDB text:
 
-You are the UICPAVLS clinical support assistant for a patient risk assessment and education platform.
+```python
+pdb_text = (
+    "ATOM      1  N   GLY A   1      11.104  13.207   9.223  1.00 20.00           N\n"
+    "ATOM      2  CA  GLY A   1      12.000  14.000  10.000  1.00 20.00           C\n"
+)
+print(agent.analyze(pdb_text, input_format="pdb"))
+```
 
-Your role is to:
-- review the patient’s health and lifestyle data
-- summarize risk-relevant information in clear, patient-friendly language
-- identify possible risk factors associated with prediabetes, diabetes, or lifestyle-related chronic disease
-- suggest evidence-based lifestyle coaching and prevention steps
-- ask for missing information only when necessary
-- maintain safety, empathy, and nonjudgmental communication
+The agent supports:
+- FASTA DNA/RNA/protein records
+- PDB coordinate text
+- length and composition summaries
+- canonical-base GC percentage for nucleic sequences
+- atom/residue counts and chain IDs for PDB data
 
-Important rules:
-- Do not diagnose.
-- Do not prescribe treatment.
-- Do not replace a licensed clinician.
-- If the information is incomplete, say so clearly.
-- If severe symptoms are described, advise the user to contact a healthcare professional or emergency services immediately.
-- Keep the tone supportive and understandable.
+Invalid or unsupported input raises a ValueError.
 
-Use only the data provided. If values are missing, say “Missing data” and ask for them.
+## Local API
 
-Return output in this format:
-1. Patient Summary
-2. Risk Signals Identified
-3. Lifestyle Advice
-4. Recommended Next Steps
-5. Missing Information Needed
-6. Safety Note
+The backend provides a local descriptive analysis endpoint:
 
-Keep all answers plain-language and easy to understand.
+```http
+POST /genecrispy/analyze
+Content-Type: application/json
+```
 
-## Firebase setup
+Example request:
 
-1. Create or open your Firebase project
-2. Enable Firestore Database
-3. Enable Firebase Functions
-4. Add the Firebase web app if needed
-5. Install the Firebase CLI
+```json
+{
+  "content": ">sample_gene\nACGTGC\n",
+  "input_format": "auto"
+}
+```
 
-Commands:
+Run the API from the repository root:
 
-npm install -g firebase-tools
-firebase login
-firebase init
+```bash
+python -m pip install -e ".[api]"
+uvicorn backend:app --reload
+```
 
-Choose the Firebase services you need for your project, including:
-- Firestore
-- Functions
-- Hosting if desired
-- Storage if desired
+Then open the Swagger docs:
 
-## Secret setup for Gemini
+```text
+http://localhost:8000/docs
+```
 
-Set the Gemini API key as a Firebase secret:
+This endpoint is local-only and does not persist submitted sequence or coordinate text.
 
-firebase functions:secrets:set GEMINI_API_KEY
+## Firebase and backend integration
 
-This keeps the key out of client code and away from direct browser exposure.
+The repository also includes Firebase-ready patterns for PatientWorld-style workflows, including:
+- Firestore save/get helpers
+- patient record schema compatibility
+- prediction storage and retrieval helpers
+- optional Firebase initialization for deployment environments
 
-## Quick start
-
-Clone the repository:
-
-git clone https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld.git
-cd replicatedgenecrispy2dpatientworld
-
-Install dependencies:
-
-pip install -r requirements.txt
-
-Optional backend runtime dependencies include:
-- firebase-admin
-- fastapi
-- uvicorn
-
-## Running the backend
-
-The backend is designed to provide prediction endpoints and Firebase integration.
-
-Start the API locally:
-
-uvicorn backend.main:app --reload
-
-This exposes endpoints such as:
+The backend still supports the original patient-risk model endpoints:
 - /health
 - /predict
 - /patients
 - /predict-and-save
 
-## Firestore + Gemini pipeline
+These are optional and require a valid Firebase configuration if enabled.
 
-The recommended pipeline is:
+## Google Colab quickstart
 
-1. Save a patient record to Firestore
-2. A backend service reads the patient record and runs PatientWorld model logic
-3. Save the prediction results to Firestore
-4. A Firestore trigger calls Gemini
-5. Gemini writes a patient-friendly summary to Firestore
-6. The app reads the summary and displays it to the user
+A Colab notebook is included in the repo for a browser-based workflow.
 
-This is the core orchestration pattern for UICPAVLS.
+### Step-by-step Colab flow
 
-## Model capabilities
+1. Open a new notebook in Google Colab.
+2. Clone the repository:
 
-The repo includes utilities for:
-- dataset normalization
-- synthetic data generation
-- feature engineering
-- on-demand prediction scoring
-- probability threshold selection
-- model calibration
-- optional face-feature experiments
+```python
+!git clone https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld.git
+%cd replicatedgenecrispy2dpatientworld
+```
 
-It is intended to be a data-science and model-engine layer for patient risk estimation, rather than a standalone Firebase app by itself.
+3. Install the project and API/test dependencies:
 
-## Notes on architecture
+```python
+!python -m pip install -e ".[api,test]"
+```
 
-This repository should be thought of as the risk-model engine, while Firestore acts as the operational data store. The app is not simply “the repo as a database”; rather, the repo provides the model logic and backend service, while Firebase provides the persistent runtime storage and trigger workflow.
+4. Import the package and verify the version:
 
-## Security guidance
+```python
+import genecrispy
+from genecrispy import GeneCrispyAgent
+print(genecrispy.__version__)
+agent = GeneCrispyAgent()
+```
 
-For production usage:
-- store model keys and API keys in environment variables or Firebase secrets
-- do not expose sensitive credentials in frontend bundles
-- use Firestore security rules to restrict access to patient records
-- authenticate API and frontend access appropriately
-- validate patient inputs before model inference
+5. Analyze a FASTA sample:
 
-## Existing implementation included in this repo
+```python
+result = agent.analyze(">sample_gene\nACGTGC\n")
+print(result)
+```
 
-This repository includes a Firestore-friendly backend and compatibility layer, including:
-- patientworld/ml_pipeline.py compatibility exports
-- patientworld/firebase_backend.py for Firestore and model orchestration
-- backend/main.py for FastAPI endpoints
-- Firebase-ready integration patterns for Gemini-triggered summaries
+6. Analyze a PDB sample:
 
-## Summary
+```python
+pdb_text = (
+    "ATOM      1  N   GLY A   1      11.104  13.207   9.223  1.00 20.00           N\n"
+    "ATOM      2  CA  GLY A   1      12.000  14.000  10.000  1.00 20.00           C\n"
+)
+print(agent.analyze(pdb_text, input_format="pdb"))
+```
 
-This project is a Python-based patient risk model integrated with Firebase/UICPAVLS infrastructure. The long-term intended design is:
+7. Exercise the local API with FastAPI's test client:
 
-- Firestore for data persistence
-- PatientWorld model for risk prediction
-- Firebase Functions triggers for orchestration
-- Gemini for plain-language patient explanation and coaching support
+```python
+from fastapi.testclient import TestClient
+from backend import app
 
-This setup is well suited for a patient-facing digital care platform where model predictions must be stored, reviewed, explained, and surfaced in an understandable way.
+client = TestClient(app)
+response = client.post(
+    "/genecrispy/analyze",
+    json={"content": ">sample_gene\nACGTGC\n", "input_format": "auto"},
+)
+print(response.status_code)
+print(response.json())
+```
 
-## Repository information
+8. Run the repo tests:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+9. Optional: build a wheel locally:
+
+```bash
+python -m pip install build
+python -m build --wheel
+```
+
+Important Colab security note:
+- Colab is a hosted third-party runtime.
+- Do not upload sensitive patient, genomic, or credential data to a notebook without explicit authorization.
+- Do not place Firebase service-account keys or tokens in notebook cells.
+
+## Safety and scope
+
+This project is intentionally limited to descriptive analysis:
+- sequence length
+- composition summary
+- GC percentage for canonical nucleic bases
+- atom/residue count and coordinate bounds for PDB text
+
+It does not:
+- diagnose disease
+- interpret genomic variants as pathogenic or benign
+- provide medical or clinical guidance
+- make treatment recommendations
+- persist uploaded data outside the runtime unless explicitly configured by the user in a separate environment
+
+All outputs are research-oriented summaries only.
+
+## Tests
+
+Run the included tests with:
+
+```bash
+python -m unittest discover -s tests
+```
+
+## Versioning
+
+This repo identifies the package and API as:
+- Project name: GENE CRISpy
+- Package: genecrispy
+- Version: 0.2.0
+
+## Notes
+
+This repository is structured to support both research workflows and a lightweight API layer. It is suitable for:
+- local sequence and structure analysis
+- notebook prototyping in Colab
+- integration into an application or service with explicit security controls
+- experimentation with genomic and molecular data in a controlled environment
 
 Repository:
 https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld.git
-
-This README reflects the combined workflow discussed across the implementation and Firebase integration steps: PatientWorld model logic, Firestore backend, and Gemini summarization pipeline for UICPAVLS.
