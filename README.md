@@ -1,96 +1,98 @@
 # GENE CRISpy 0.2.0
 
-GENE CRISpy is a Python package and local analysis service for descriptive analysis of genetic sequence text and molecular structure coordinate text.
+GENE CRISpy is a Python package and local analysis service for **descriptive analysis** of genetic sequence text and molecular structure coordinate text. This guide is written for first-time users and starts with a safe, sample-data workflow in Google Colab.
 
-This repository combines:
-- GENE CRISpy, an installable Python package for FASTA and PDB analysis
-- PatientWorld compatibility utilities for a patient risk-modeling workflow
-- a FastAPI backend exposing the analysis endpoint locally
-- optional Firebase/Firestore integration for broader application use
-- a Colab-ready quickstart workflow for running the project in a hosted notebook environment
+> **Important: GENE CRISpy 0.2.0 is not an AI model or an AI-powered interpretation system.** The current analyzer uses deterministic Python code to summarize supported FASTA and PDB text. It does not use an LLM, search biological databases, identify variants, explain disease, diagnose, or recommend treatment. Do not treat the output as clinical guidance.
 
-The project is intended for research and descriptive analysis only. It does not diagnose, recommend treatment, or provide clinical interpretation.
+## Quick Start for first-time users
 
-## Project status
+The easiest way to try GENE CRISpy is the included Google Colab notebook. It uses sample data, so you can learn the workflow without uploading personal or patient data.
 
-- Package name: genecrispy
-- Version: 0.2.0
-- API title: GENE CRISpy
-- API version: 0.2.0
-- Python requirement: 3.10+
+### 1. Open the notebook
 
-## Repository layout
+Open the [GENE CRISpy Colab Quickstart notebook](https://colab.research.google.com/github/contrivancecompanychicago/replicatedgenecrispy2dpatientworld/blob/main/notebooks/GENE_CRISpy_Colab_Quickstart.ipynb) in Google Colab. Alternatively, in Colab choose **File → Open notebook → GitHub** and enter this repository URL:
 
-- genecrispy/ — installable Python package
-- patientworld/ — PatientWorld ML utilities and compatibility layer
-- backend/ — FastAPI application
-- tests/ — unit and API tests
-- docs/ — usage and reference guides
-- notebooks/ — Colab notebook quickstart
-- requirements.txt — base Python dependencies
-- pyproject.toml — package metadata and build configuration
-
-## Install from the repo
-
-Install the package in editable mode:
-
-```bash
-python -m pip install -e .
+```text
+https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld
 ```
 
-Install the optional API and test dependencies:
+Choose `notebooks/GENE_CRISpy_Colab_Quickstart.ipynb` from the results.
+
+### 2. Run notebook cells from top to bottom
+
+In Colab, choose **Runtime → Run all**, or run each cell using its play button. The notebook will:
+
+1. Clone this repository into the temporary Colab runtime.
+2. Install GENE CRISpy and the optional API/test dependencies.
+3. Import the package and show its version (`0.2.0`).
+4. Analyze example FASTA and PDB text.
+5. Send an example request to the API in-process using FastAPI's test client.
+6. Run the tests and optionally build a Python wheel.
+
+No Firebase credentials, API key, public web server, or GPU are needed for these examples. The notebook does not publish the package or deploy the service.
+
+### 3. Understand what the sample results mean
+
+- **FASTA** is a plain-text format for biological sequences. The current tool reports sequence type, length, symbol composition, and canonical-base GC percentage for nucleic acids.
+- **PDB** is a text format for molecular structure coordinates. The current tool reports basic atom/residue counts, chain IDs, and coordinate bounds.
+- These are file summaries, not biological interpretation, structural validation, or predictions.
+
+### 4. Protect your data
+
+Google Colab runs on a hosted third-party service. For your first use, stick to the synthetic examples in the notebook. Do not upload identifiable, private, patient, or sensitive genomic data unless you have verified that you are authorized to use that data with Colab and have reviewed applicable privacy requirements. Never paste passwords, access tokens, or Firebase service-account keys into notebook cells.
+
+For more details, see [the Colab guide](docs/GENE_CRISpy_COLAB.md) and [the package guide](docs/GENE_CRISpy_PYTHON_PACKAGE.md).
+
+## What this repository contains
+
+- `genecrispy/` — installable GENE CRISpy Python package
+- `patientworld/` — PatientWorld ML utilities and compatibility code
+- `backend/` — FastAPI application and `/genecrispy/analyze` endpoint
+- `tests/` — package and API tests
+- `notebooks/` — Google Colab quickstart notebook
+- `docs/` — usage guides
+- `pyproject.toml` — package metadata and build configuration
+
+The repository also includes optional Firebase/Firestore integration patterns. They are separate from the local GENE CRISpy sequence/structure analysis workflow.
+
+## Install and use locally
+
+Python 3.10 or later is required. From the repository root, install the package:
 
 ```bash
-python -m pip install -e ".[api,test]"
+python -m pip install .
 ```
 
-## Python usage
+To install optional FastAPI and test dependencies as well:
+
+```bash
+python -m pip install ".[api,test]"
+```
+
+Use the Python API:
 
 ```python
 from genecrispy import GeneCrispyAgent, __version__
 
-agent = GeneCrispyAgent()
 print(__version__)  # 0.2.0
+agent = GeneCrispyAgent()
 
 result = agent.analyze(">sample_gene\nACGTGC\n")
 print(result)
 ```
 
-You can also specify the parser explicitly:
+`input_format` can be `"auto"`, `"fasta"`, or `"pdb"`. The parser has a 5 MiB input limit. Invalid or unsupported input raises `ValueError`.
 
-```python
-result = agent.analyze(">sample_gene\nACGTGC\n", input_format="fasta")
-```
+## Local FastAPI endpoint
 
-For PDB text:
-
-```python
-pdb_text = (
-    "ATOM      1  N   GLY A   1      11.104  13.207   9.223  1.00 20.00           N\n"
-    "ATOM      2  CA  GLY A   1      12.000  14.000  10.000  1.00 20.00           C\n"
-)
-print(agent.analyze(pdb_text, input_format="pdb"))
-```
-
-The agent supports:
-- FASTA DNA/RNA/protein records
-- PDB coordinate text
-- length and composition summaries
-- canonical-base GC percentage for nucleic sequences
-- atom/residue counts and chain IDs for PDB data
-
-Invalid or unsupported input raises a ValueError.
-
-## Local API
-
-The backend provides a local descriptive analysis endpoint:
+The API exposes a descriptive analysis route:
 
 ```http
 POST /genecrispy/analyze
 Content-Type: application/json
 ```
 
-Example request:
+Example JSON request:
 
 ```json
 {
@@ -99,155 +101,50 @@ Example request:
 }
 ```
 
-Run the API from the repository root:
+Run the development server from the repository root:
 
 ```bash
-python -m pip install -e ".[api]"
+python -m pip install ".[api]"
 uvicorn backend:app --reload
 ```
 
-Then open the Swagger docs:
+Open `http://localhost:8000/docs` to try the endpoint interactively. Invalid input returns HTTP 422. The analysis route runs the local analyzer and does not persist the submitted sequence or coordinate text. Do not expose a development server publicly without appropriate authentication and security controls.
 
-```text
-http://localhost:8000/docs
-```
+The FastAPI metadata identifies the service as **GENE CRISpy 0.2.0**. Existing PatientWorld routes (`/health`, `/predict`, `/patients`, and `/predict-and-save`) are also present; patient persistence and prediction workflows may require Firebase configuration.
 
-This endpoint is local-only and does not persist submitted sequence or coordinate text.
+## Tests
 
-## Firebase and backend integration
-
-The repository also includes Firebase-ready patterns for PatientWorld-style workflows, including:
-- Firestore save/get helpers
-- patient record schema compatibility
-- prediction storage and retrieval helpers
-- optional Firebase initialization for deployment environments
-
-The backend still supports the original patient-risk model endpoints:
-- /health
-- /predict
-- /patients
-- /predict-and-save
-
-These are optional and require a valid Firebase configuration if enabled.
-
-## Google Colab quickstart
-
-A Colab notebook is included in the repo for a browser-based workflow.
-
-### Step-by-step Colab flow
-
-1. Open a new notebook in Google Colab.
-2. Clone the repository:
-
-```python
-!git clone https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld.git
-%cd replicatedgenecrispy2dpatientworld
-```
-
-3. Install the project and API/test dependencies:
-
-```python
-!python -m pip install -e ".[api,test]"
-```
-
-4. Import the package and verify the version:
-
-```python
-import genecrispy
-from genecrispy import GeneCrispyAgent
-print(genecrispy.__version__)
-agent = GeneCrispyAgent()
-```
-
-5. Analyze a FASTA sample:
-
-```python
-result = agent.analyze(">sample_gene\nACGTGC\n")
-print(result)
-```
-
-6. Analyze a PDB sample:
-
-```python
-pdb_text = (
-    "ATOM      1  N   GLY A   1      11.104  13.207   9.223  1.00 20.00           N\n"
-    "ATOM      2  CA  GLY A   1      12.000  14.000  10.000  1.00 20.00           C\n"
-)
-print(agent.analyze(pdb_text, input_format="pdb"))
-```
-
-7. Exercise the local API with FastAPI's test client:
-
-```python
-from fastapi.testclient import TestClient
-from backend import app
-
-client = TestClient(app)
-response = client.post(
-    "/genecrispy/analyze",
-    json={"content": ">sample_gene\nACGTGC\n", "input_format": "auto"},
-)
-print(response.status_code)
-print(response.json())
-```
-
-8. Run the repo tests:
+Run the test suite from the repository root:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-9. Optional: build a wheel locally:
+## Package build (optional)
+
+Build a wheel locally; this does not publish it to PyPI:
 
 ```bash
 python -m pip install build
 python -m build --wheel
 ```
 
-Important Colab security note:
-- Colab is a hosted third-party runtime.
-- Do not upload sensitive patient, genomic, or credential data to a notebook without explicit authorization.
-- Do not place Firebase service-account keys or tokens in notebook cells.
+## Scope and safety
 
-## Safety and scope
+GENE CRISpy 0.2.0 reports descriptive file properties only. It does not:
 
-This project is intentionally limited to descriptive analysis:
-- sequence length
-- composition summary
-- GC percentage for canonical nucleic bases
-- atom/residue count and coordinate bounds for PDB text
+- use artificial intelligence or an LLM to interpret results
+- annotate genes or variants from an external database
+- classify variants as pathogenic or benign
+- diagnose disease, estimate clinical risk, or recommend treatment
+- replace a qualified genetics professional, clinician, or molecular biologist
 
-It does not:
-- diagnose disease
-- interpret genomic variants as pathogenic or benign
-- provide medical or clinical guidance
-- make treatment recommendations
-- persist uploaded data outside the runtime unless explicitly configured by the user in a separate environment
+Do not use these summaries to make healthcare decisions. The software processes input locally in the analysis function; deployments, notebooks, or surrounding applications may have their own data handling and retention behavior, which you should review separately.
 
-All outputs are research-oriented summaries only.
+## Version and project information
 
-## Tests
-
-Run the included tests with:
-
-```bash
-python -m unittest discover -s tests
-```
-
-## Versioning
-
-This repo identifies the package and API as:
 - Project name: GENE CRISpy
-- Package: genecrispy
-- Version: 0.2.0
-
-## Notes
-
-This repository is structured to support both research workflows and a lightweight API layer. It is suitable for:
-- local sequence and structure analysis
-- notebook prototyping in Colab
-- integration into an application or service with explicit security controls
-- experimentation with genomic and molecular data in a controlled environment
-
-Repository:
-https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld.git
+- Python import/package name: `genecrispy`
+- Version: `0.2.0`
+- Supported Python: 3.10+
+- Repository: <https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld>
