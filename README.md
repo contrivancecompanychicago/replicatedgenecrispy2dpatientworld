@@ -148,3 +148,8 @@ Do not use these summaries to make healthcare decisions. The software processes 
 - Version: `0.2.0`
 - Supported Python: 3.10+
 - Repository: <https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld>
+
+## M1 genetics learning path
+
+For the working core-only Colab path, open [M1 Genetics Foundations](notebooks/GENE_CRISpy_M1_Genetics.ipynb).
+It adds original study explanations mapped to selected public UIC Block 1 objectives, synthetic DNA/RNA examples, reflections and downloadable results. No UIC affiliation or endorsement is implied. See [source mapping and limitations](docs/GENE_CRISpy_M1_GENETICS.md). This path avoids the existing PatientWorld/API import blockers; it does not repair them.
