@@ -95,7 +95,7 @@ def _analyze_fasta(content: str) -> dict[str, Any]:
 
 def _summarize_sequence(identifier: str, sequence: str) -> dict[str, Any]:
     letters = set(sequence)
-    if letters <= DNA_ALPHABET:
+    if letters <= DNA_ALPHABET or letters <= RNA_ALPHABET:
         molecule_type = "RNA" if "U" in letters else ("DNA" if "T" in letters else "nucleic_acid_unspecified")
         counts = Counter(sequence)
         result: dict[str, Any] = {
