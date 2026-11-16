@@ -35,6 +35,14 @@ class GeneCrispyEndpointTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 422)
 
+    def test_gets_bundled_pathway_index(self):
+        response = self.client.get("/genecrispy/pathways")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertGreater(body["count"], 0)
+        self.assertIn("pathway_id", body["pathways"][0])
+        self.assertIn("title", body["pathways"][0])
+
     def test_gets_pathway_summary_in_genecrispy_namespace(self):
         response = self.client.get("/genecrispy/pathways/hsa04930")
         self.assertEqual(response.status_code, 200)

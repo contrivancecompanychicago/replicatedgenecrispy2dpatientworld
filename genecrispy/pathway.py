@@ -24,6 +24,24 @@ def load_pathway_schema() -> dict[str, Any]:
     return json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
+def list_pathways() -> list[dict[str, str]]:
+    """List the bundled KGML pathways with basic metadata."""
+    pathways: list[dict[str, str]] = []
+    for xml_path in sorted(_PATHWAY_DIR.glob("*.xml")):
+        try:
+            root = ET.fromstring(xml_path.read_bytes())
+        except ET.ParseError:
+            continue
+        pathways.append(
+            {
+                "pathway_id": xml_path.stem,
+                "title": root.get("title", xml_path.stem),
+                "organism": root.get("org", ""),
+            }
+        )
+    return pathways
+
+
 def load_pathway(pathway_id: str) -> dict[str, Any]:
     """Return a descriptive JSON-ready summary of a bundled KGML file."""
     if not _PATHWAY_ID.fullmatch(pathway_id):
@@ -37,8 +55,6 @@ def load_pathway(pathway_id: str) -> dict[str, Any]:
     if len(raw) > _MAX_KGML_BYTES:
         raise ValueError("Pathway KGML exceeds the 1 MiB size limit.")
 
-    # ElementTree does not fetch external DTDs/entities. Bundled KGML deliberately
-    # omits the KEGG DOCTYPE, so parsing is offline and deterministic.
     root = ET.fromstring(raw)
     entries: list[dict[str, Any]] = []
     for element in root.findall("entry"):
@@ -136,4 +152,11 @@ def render_pathway_html(pathway: dict[str, Any]) -> str:
     )
 
 
-__all__ = ["PathwayNotFoundError", "load_pathway", "load_pathway_schema", "render_pathway_html", "render_pathway_svg"]
+__all__ = [
+    "PathwayNotFoundError",
+    "list_pathways",
+    "load_pathway",
+    "load_pathway_schema",
+    "render_pathway_html",
+    "render_pathway_svg",
+]

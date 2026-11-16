@@ -13,6 +13,7 @@ from patientworld.firebase_backend import PatientWorldFirestoreClient, predict_p
 from patientworld.genecrispy_agent import GeneCrispyAgent
 from genecrispy.pathway import (
     PathwayNotFoundError,
+    list_pathways,
     load_pathway,
     load_pathway_schema,
     render_pathway_html,
@@ -83,6 +84,13 @@ def analyze_genecrispy(payload: GeneCrispyAnalysisRequest) -> Dict[str, Any]:
         return _genecrispy_agent.analyze(payload.content, input_format=payload.input_format)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/genecrispy/pathways")
+def get_pathways() -> Dict[str, Any]:
+    """Return the list of bundled KEGG pathways with summary metadata."""
+    pathways = list_pathways()
+    return {"count": len(pathways), "pathways": pathways}
 
 
 @app.get("/genecrispy/pathways/schema")

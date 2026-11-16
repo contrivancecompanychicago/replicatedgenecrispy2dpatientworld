@@ -1,7 +1,8 @@
 # GENE CRISpy pathway API and Colab display
 
-The API bundles a compact, offline KGML excerpt for the human KEGG Type II diabetes mellitus pathway (`hsa04930`). All pathway routes use the `/genecrispy/pathways` namespace:
+The API bundles a compact, offline KGML excerpt for the human KEGG Type II diabetes mellitus pathway (`hsa04930`). All pathway routes live under the `/genecrispy/pathways` namespace:
 
+- `GET /genecrispy/pathways` returns the list of bundled pathways and their metadata.
 - `GET /genecrispy/pathways/hsa04930` returns pathway metadata, entries, and relations as JSON.
 - `GET /genecrispy/pathways/hsa04930/render` returns a self-contained HTML page containing an SVG graph.
 - `GET /genecrispy/pathways/schema` returns the JSON Schema for pathway responses, including relation endpoints and subtype fields. The schema is also stored at `data/schemas/pathway-response.schema.json`.
@@ -32,8 +33,9 @@ To inspect the structured pathway data and schema:
 pathway = requests.get(
     f"{API_BASE}/genecrispy/pathways/hsa04930", timeout=30
 ).json()
+pathways = requests.get(f"{API_BASE}/genecrispy/pathways", timeout=30).json()
 schema = requests.get(f"{API_BASE}/genecrispy/pathways/schema", timeout=30).json()
-print(pathway["title"], pathway["gene_count"], pathway["relation_count"])
+print(pathways["count"], pathway["title"], pathway["gene_count"], pathway["relation_count"])
 ```
 
 Do not put patient identifiers or private genomic/clinical data in these requests. These routes serve static reference data and do not accept or analyze patient information.
