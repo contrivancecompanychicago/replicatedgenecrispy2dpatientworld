@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pathway name="path:hsa04930" org="hsa" number="04930" title="Type II diabetes mellitus">
+  <!-- Compact bundled KGML excerpt from the user-provided KEGG map; nodes and relationships are reference data. -->
+  <entry id="13" name="hsa:110117499 hsa:5290 hsa:5291 hsa:5293 hsa:5295 hsa:5296 hsa:8503" type="gene"><graphics name="PI3K" type="rectangle" x="515" y="250" width="46" height="17"/></entry>
+  <entry id="14" name="hsa:6517" type="gene"><graphics name="GLUT4" type="rectangle" x="515" y="144" width="46" height="17"/></entry>
+  <entry id="15" name="hsa:3667" type="gene"><graphics name="IRS1" type="rectangle" x="432" y="250" width="46" height="17"/></entry>
+  <entry id="16" name="hsa:3643" type="gene"><graphics name="INSR" type="rectangle" x="266" y="250" width="46" height="17"/></entry>
+  <entry id="17" name="hsa:3630" type="gene"><graphics name="INS" type="rectangle" x="183" y="250" width="46" height="17"/></entry>
+  <entry id="22" name="hsa:122809 hsa:8651 hsa:8835 hsa:9021" type="gene"><graphics name="SOCS" type="rectangle" x="349" y="313" width="46" height="17"/></entry>
+  <entry id="23" name="hsa:5594 hsa:5595" type="gene"><graphics name="ERK" type="rectangle" x="349" y="340" width="46" height="17"/></entry>
+  <entry id="27" name="hsa:9370" type="gene"><graphics name="ADIPO" type="rectangle" x="183" y="144" width="46" height="17"/></entry>
+  <entry id="28" name="hsa:3551" type="gene"><graphics name="IKK" type="rectangle" x="349" y="368" width="46" height="17"/></entry>
+  <entry id="29" name="hsa:5580 hsa:5581" type="gene"><graphics name="PKCδ" type="rectangle" x="349" y="466" width="46" height="17"/></entry>
+  <entry id="30" name="hsa:3651" type="gene"><graphics name="PDX-1" type="rectangle" x="432" y="597" width="46" height="17"/></entry>
+  <entry id="31" name="hsa:3667 hsa:8471 hsa:8660" type="gene"><graphics name="IRS" type="rectangle" x="432" y="272" width="46" height="17"/></entry>
+  <entry id="32" name="hsa:5599 hsa:5601 hsa:5602" type="gene"><graphics name="JNK" type="rectangle" x="349" y="388" width="46" height="17"/></entry>
+  <entry id="33" name="hsa:5590" type="gene"><graphics name="PKCζ" type="rectangle" x="349" y="437" width="46" height="17"/></entry>
+  <entry id="34" name="hsa:7124" type="gene"><graphics name="TNFα" type="rectangle" x="183" y="417" width="46" height="17"/></entry>
+  <entry id="37" name="hsa:3630" type="gene"><graphics name="INS" type="rectangle" x="598" y="614" width="46" height="17"/></entry>
+  <entry id="38" name="hsa:2645 hsa:3098 hsa:3099 hsa:3101 hsa:80201" type="gene"><graphics name="GK" type="rectangle" x="349" y="762" width="46" height="17"/></entry>
+  <entry id="39" name="hsa:2475" type="gene"><graphics name="mTOR" type="rectangle" x="349" y="417" width="46" height="17"/></entry>
+  <entry id="40" name="hsa:389692" type="gene"><graphics name="MafA" type="rectangle" x="432" y="631" width="46" height="17"/></entry>
+  <entry id="41" name="hsa:6514" type="gene"><graphics name="GLUT2" type="rectangle" x="266" y="762" width="46" height="17"/></entry>
+  <entry id="42" name="hsa:3767" type="gene"><graphics name="Kir6.2" type="rectangle" x="266" y="728" width="46" height="17"/></entry>
+  <entry id="43" name="hsa:6833" type="gene"><graphics name="SUR1" type="rectangle" x="266" y="711" width="46" height="17"/></entry>
+  <relation entry1="17" entry2="16" type="PPrel"><subtype name="activation" value="--&gt;"/></relation>
+  <relation entry1="16" entry2="15" type="PPrel"><subtype name="activation" value="--&gt;"/></relation>
+  <relation entry1="15" entry2="13" type="PPrel"><subtype name="activation" value="--&gt;"/></relation>
+  <relation entry1="13" entry2="14" type="PPrel"><subtype name="indirect effect" value="..&gt;"/></relation>
+  <relation entry1="16" entry2="31" type="PPrel"><subtype name="activation" value="--&gt;"/></relation>
+  <relation entry1="31" entry2="13" type="PPrel"><subtype name="activation" value="--&gt;"/></relation>
+  <relation entry1="22" entry2="31" type="PPrel"><subtype name="inhibition" value="--|"/></relation>
+  <relation entry1="28" entry2="31" type="PPrel"><subtype name="inhibition" value="--|"/><subtype name="phosphorylation" value="+p"/></relation>
+  <relation entry1="32" entry2="31" type="PPrel"><subtype name="inhibition" value="--|"/><subtype name="phosphorylation" value="+p"/></relation>
+  <relation entry1="39" entry2="31" type="PPrel"><subtype name="inhibition" value="--|"/><subtype name="phosphorylation" value="+p"/></relation>
+  <relation entry1="33" entry2="31" type="PPrel"><subtype name="inhibition" value="--|"/><subtype name="phosphorylation" value="+p"/></relation>
+  <relation entry1="29" entry2="31" type="PPrel"><subtype name="inhibition" value="--|"/><subtype name="phosphorylation" value="+p"/></relation>
+  <relation entry1="34" entry2="28" type="PPrel"><subtype name="indirect effect" value="..&gt;"/></relation>
+  <relation entry1="34" entry2="32" type="PPrel"><subtype name="indirect effect" value="..&gt;"/></relation>
+  <relation entry1="34" entry2="39" type="PPrel"><subtype name="indirect effect" value="..&gt;"/></relation>
+  <relation entry1="30" entry2="37" type="GErel"><subtype name="expression" value="--&gt;"/></relation>
+  <relation entry1="40" entry2="37" type="GErel"><subtype name="expression" value="--&gt;"/></relation>
+  <relation entry1="38" entry2="41" type="PPrel"><subtype name="indirect effect" value="..&gt;"/></relation>
+  <relation entry1="41" entry2="42" type="PCrel"/>
+</pathway>

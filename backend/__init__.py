@@ -6,10 +6,12 @@ import os
 from typing import Any, Dict, Literal, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from patientworld.firebase_backend import PatientWorldFirestoreClient, predict_patient_record
 from patientworld.genecrispy_agent import GeneCrispyAgent
+from genecrispy.pathway import PathwayNotFoundError, load_pathway, render_pathway_html
 
 app = FastAPI(title="GENE CRISpy", version="0.2.0", description="GENE CRISpy genetic and molecular structure analysis API")
 
@@ -78,14 +80,33 @@ def analyze_genecrispy(payload: GeneCrispyAnalysisRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@app.get("/pathways/{pathway_id}")
+def get_pathway(pathway_id: str) -> Dict[str, Any]:
+    """Return descriptive metadata, entries, and relations for a bundled KEGG pathway."""
+    try:
+        return load_pathway(pathway_id)
+    except PathwayNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Pathway {pathway_id!r} is not bundled.") from exc
+    except (ValueError, OSError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/pathways/{pathway_id}/render", response_class=HTMLResponse)
+def render_pathway(pathway_id: str) -> HTMLResponse:
+    """Return a self-contained SVG pathway page that can be displayed in Colab."""
+    try:
+        return HTMLResponse(content=render_pathway_html(load_pathway(pathway_id)))
+    except PathwayNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Pathway {pathway_id!r} is not bundled.") from exc
+    except (ValueError, OSError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @app.post("/predict")
 def predict(payload: PredictionRequest) -> Dict[str, Any]:
     record = payload.model_dump(exclude_none=True)
     result = predict_patient_record(record, threshold=float(payload.threshold or 0.5))
-    return {
-        "patientId": payload.patientId,
-        **result,
-    }
+    return {"patientId": payload.patientId, **result}
 
 
 @app.post("/patients")
@@ -105,11 +126,7 @@ def predict_and_save(payload: PredictionRequest) -> Dict[str, Any]:
 
     record = payload.model_dump(exclude_none=True)
     prediction = predict_patient_record(record, threshold=float(payload.threshold or 0.5))
-    firestore_payload = {
-        "patientId": payload.patientId,
-        **record,
-        **prediction,
-    }
+    firestore_payload = {"patientId": payload.patientId, **record, **prediction}
     _firebase_client.save_patient(payload.patientId, firestore_payload)
     prediction_doc = _firebase_client.save_prediction(
         patient_id=payload.patientId,

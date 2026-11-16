@@ -35,6 +35,29 @@ class GeneCrispyEndpointTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 422)
 
+    def test_gets_pathway_summary(self):
+        response = self.client.get("/pathways/hsa04930")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["title"], "Type II diabetes mellitus")
+        self.assertGreater(body["gene_count"], 0)
+        self.assertGreater(body["relation_count"], 0)
+        self.assertIn("not patient-specific", body["safety_notice"])
+
+    def test_renders_pathway_as_colab_ready_html(self):
+        response = self.client.get("/pathways/hsa04930/render")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("image/svg+xml", response.text)
+        self.assertIn("Type II diabetes mellitus", response.text)
+
+    def test_unknown_pathway_returns_404(self):
+        response = self.client.get("/pathways/hsa00000")
+        self.assertEqual(response.status_code, 404)
+
+    def test_pathway_id_is_validated(self):
+        response = self.client.get("/pathways/../../README")
+        self.assertIn(response.status_code, (404, 422))
+
 
 if __name__ == "__main__":
     unittest.main()
