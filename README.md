@@ -1,116 +1,107 @@
 # GENE CRISpy 0.2.0
 
-GENE CRISpy is a Python package and local analysis service for **descriptive analysis** of genetic sequence text and molecular structure coordinate text. This guide is written for first-time users and starts with a safe, sample-data workflow in Google Colab.
+GENE CRISpy is a Python package and local API for descriptive analysis of genetic sequence text and molecular-structure coordinate text. The repository also contains PatientWorld utilities and a read-only API for exploring a bundled KEGG pathway reference excerpt.
 
-> **Important: GENE CRISpy 0.2.0 is not an AI model or an AI-powered interpretation system.** The current analyzer uses deterministic Python code to summarize supported FASTA and PDB text. It does not use an LLM, search biological databases, identify variants, explain disease, diagnose, or recommend treatment. Do not treat the output as clinical guidance.
+> **Scope:** GENE CRISpy is not an AI-powered interpretation system. Its sequence and structure analyzer reports descriptive properties; the pathway routes serve reference data. These features do not diagnose disease, interpret patient variants, estimate clinical risk, or recommend treatment.
 
-## Quick Start for first-time users
+## What’s in this repository
 
-The easiest way to try GENE CRISpy is the included Google Colab notebook. It uses sample data, so you can learn the workflow without uploading personal or patient data.
-
-### 1. Open the notebook
-
-Open the [GENE CRISpy Colab Quickstart notebook](https://colab.research.google.com/github/contrivancecompanychicago/replicatedgenecrispy2dpatientworld/blob/main/notebooks/GENE_CRISpy_Colab_Quickstart.ipynb) in Google Colab. Alternatively, in Colab choose **File → Open notebook → GitHub** and enter this repository URL:
-
-```text
-https://github.com/contrivancecompanychicago/replicatedgenecrispy2dpatientworld
-```
-
-Choose `notebooks/GENE_CRISpy_Colab_Quickstart.ipynb` from the results.
-
-### 2. Run notebook cells from top to bottom
-
-In Colab, choose **Runtime → Run all**, or run each cell using its play button. The notebook will:
-
-1. Clone this repository into the temporary Colab runtime.
-2. Install GENE CRISpy and the optional API/test dependencies.
-3. Import the package and show its version (`0.2.0`).
-4. Analyze example FASTA and PDB text.
-5. Send an example request to the API in-process using FastAPI's test client.
-6. Run the tests and optionally build a Python wheel.
-
-No Firebase credentials, API key, public web server, or GPU are needed for these examples. The notebook does not publish the package or deploy the service.
-
-### 3. Understand what the sample results mean
-
-- **FASTA** is a plain-text format for biological sequences. The current tool reports sequence type, length, symbol composition, and canonical-base GC percentage for nucleic acids.
-- **PDB** is a text format for molecular structure coordinates. The current tool reports basic atom/residue counts, chain IDs, and coordinate bounds.
-- These are file summaries, not biological interpretation, structural validation, or predictions.
-
-### 4. Protect your data
-
-Google Colab runs on a hosted third-party service. For your first use, stick to the synthetic examples in the notebook. Do not upload identifiable, private, patient, or sensitive genomic data unless you have verified that you are authorized to use that data with Colab and have reviewed applicable privacy requirements. Never paste passwords, access tokens, or Firebase service-account keys into notebook cells.
-
-For more details, see [the Colab guide](docs/GENE_CRISpy_COLAB.md) and [the package guide](docs/GENE_CRISpy_PYTHON_PACKAGE.md).
-
-## What this repository contains
-
-- `genecrispy/` — installable GENE CRISpy Python package
+- `genecrispy/` — installable GENE CRISpy package, including FASTA/PDB summaries and pathway helpers
 - `patientworld/` — PatientWorld ML utilities and compatibility code
-- `backend/` — FastAPI application and `/genecrispy/analyze` endpoint
+- `backend/` — FastAPI application
+- `data/pathways/` — bundled KGML pathway reference data
+- `data/schemas/` — JSON Schema for pathway API responses
 - `tests/` — package and API tests
-- `notebooks/` — Google Colab quickstart notebook
-- `docs/` — usage guides
-- `pyproject.toml` — package metadata and build configuration
+- `notebooks/` — Google Colab quickstart
+- `docs/` — usage guides, including [KEGG pathways and Colab](docs/GENE_CRISpy_PATHWAYS.md)
 
-The repository also includes optional Firebase/Firestore integration patterns. They are separate from the local GENE CRISpy sequence/structure analysis workflow.
+PatientWorld prediction and optional Firebase/Firestore workflows are separate from the GENE CRISpy sequence/structure analyzer and pathway reference API.
 
-## Install and use locally
+## Install and run
 
-Python 3.10 or later is required. From the repository root, install the package:
-
-```bash
-python -m pip install .
-```
-
-To install optional FastAPI and test dependencies as well:
+Python 3.10 or later is required. From the repository root:
 
 ```bash
 python -m pip install ".[api,test]"
+uvicorn backend:app --reload
 ```
 
-Use the Python API:
+Open `http://localhost:8000/docs` to explore the API documentation. Do not expose a development server publicly without appropriate authentication and security controls.
+
+## Sequence and structure analysis
+
+Use the Python API locally:
 
 ```python
-from genecrispy import GeneCrispyAgent, __version__
+from genecrispy import GeneCrispyAgent
 
-print(__version__)  # 0.2.0
 agent = GeneCrispyAgent()
-
 result = agent.analyze(">sample_gene\nACGTGC\n")
 print(result)
 ```
 
-`input_format` can be `"auto"`, `"fasta"`, or `"pdb"`. The parser has a 5 MiB input limit. Invalid or unsupported input raises `ValueError`.
+The analyzer accepts FASTA sequence text or PDB coordinate text. `input_format` may be `"auto"`, `"fasta"`, or `"pdb"`; the input limit is 5 MiB. Results include basic summaries such as sequence type, length, composition, GC percentage for nucleic acids, or atom/residue counts and coordinate bounds for PDB. Input is processed locally by the analysis function and is not persisted by that function.
 
-## Local FastAPI endpoint
-
-The API exposes a descriptive analysis route:
-
-```http
-POST /genecrispy/analyze
-Content-Type: application/json
-```
-
-Example JSON request:
+The API endpoint is `POST /genecrispy/analyze`. Example request:
 
 ```json
 {
-  "content": ">sample_gene\nACGTGC\n",
+  "content": ">sample_gene\\nACGTGC\\n",
   "input_format": "auto"
 }
 ```
 
-Run the development server from the repository root:
+Unsupported input returns HTTP 422. For details, see [the API guide](docs/GENE_CRISpy_API.md).
+
+## KEGG pathway reference API
+
+A compact, offline KGML excerpt for the human Type II diabetes mellitus pathway (`hsa04930`) is bundled for read-only exploration. All pathway routes use the `/genecrispy/pathways` namespace:
+
+| Method and route | Purpose |
+| --- | --- |
+| `GET /genecrispy/pathways` | List bundled pathways and basic metadata. |
+| `GET /genecrispy/pathways/{pathway_id}` | Get pathway metadata, entries, and relations as JSON. |
+| `GET /genecrispy/pathways/{pathway_id}/render` | Get a self-contained HTML page with a basic SVG graph, suitable for Colab display. |
+| `GET /genecrispy/pathways/schema` | Get the JSON Schema for pathway responses. |
+
+For example, with the server running locally:
 
 ```bash
-python -m pip install ".[api]"
-uvicorn backend:app --reload
+curl http://localhost:8000/genecrispy/pathways
+curl http://localhost:8000/genecrispy/pathways/hsa04930
+curl http://localhost:8000/genecrispy/pathways/schema
 ```
 
-Open `http://localhost:8000/docs` to try the endpoint interactively. Invalid input returns HTTP 422. The analysis route runs the local analyzer and does not persist the submitted sequence or coordinate text. Do not expose a development server publicly without appropriate authentication and security controls.
+The response schema is also stored at `data/schemas/pathway-response.schema.json`. Each relation has `entry1` and `entry2` identifiers referring to pathway entry IDs, a KGML relation `type`, and a list of `subtypes`. A relation can connect genes, compounds, or other pathway entries; it should not automatically be interpreted as a gene-to-gene relationship. The schema describes response structure and does not by itself validate that every relation endpoint resolves to an entry.
 
-The FastAPI metadata identifies the service as **GENE CRISpy 0.2.0**. Existing PatientWorld routes (`/health`, `/predict`, `/patients`, and `/predict-and-save`) are also present; patient persistence and prediction workflows may require Firebase configuration.
+### Display the pathway in Google Colab
+
+The API needs to be reachable from the Colab runtime. Colab cannot connect to a server available only at `localhost` on your computer. Use a protected, reachable development deployment or an appropriately secured temporary tunnel.
+
+```python
+import requests
+from IPython.display import HTML, display
+
+API_BASE = "https://your-reachable-api.example"  # no trailing slash
+response = requests.get(
+    f"{API_BASE}/genecrispy/pathways/hsa04930/render", timeout=30
+)
+response.raise_for_status()
+display(HTML(response.text))
+```
+
+For structured data:
+
+```python
+pathway = requests.get(
+    f"{API_BASE}/genecrispy/pathways/hsa04930", timeout=30
+).json()
+print(pathway["title"], pathway["gene_count"], pathway["relation_count"])
+```
+
+See [the full pathway guide](docs/GENE_CRISpy_PATHWAYS.md) for additional usage notes.
+
+**Important limitations:** The bundled file is a compact pathway excerpt, not necessarily the complete KEGG map. The API serves locally bundled data and does not fetch KEGG at request time. It does not annotate patient genes or variants, and it does not feed the PatientWorld prediction model. Check KEGG’s terms before redistributing pathway data or images. Do not submit identifiable patient information or sensitive genomic/clinical data to hosted notebooks or unprotected services.
 
 ## Tests
 
@@ -120,28 +111,17 @@ Run the test suite from the repository root:
 python -m unittest discover -s tests -v
 ```
 
-## Package build (optional)
+## Safety and intended use
 
-Build a wheel locally; this does not publish it to PyPI:
+- FASTA/PDB outputs are descriptive file summaries, not biological interpretation or structural validation.
+- The pathway is static reference information, not patient-specific evidence or a clinical interpretation.
+- This software does not classify variants as pathogenic or benign, diagnose disease, estimate clinical risk, or recommend treatment.
+- Do not use the outputs to make healthcare decisions.
+- Google Colab is a hosted third-party service. Use synthetic examples unless you have reviewed the data-handling and privacy requirements for your use case.
 
-```bash
-python -m pip install build
-python -m build --wheel
-```
+Deployments, notebooks, and surrounding applications may have data-handling behavior beyond the local analysis function; review those separately.
 
-## Scope and safety
-
-GENE CRISpy 0.2.0 reports descriptive file properties only. It does not:
-
-- use artificial intelligence or an LLM to interpret results
-- annotate genes or variants from an external database
-- classify variants as pathogenic or benign
-- diagnose disease, estimate clinical risk, or recommend treatment
-- replace a qualified genetics professional, clinician, or molecular biologist
-
-Do not use these summaries to make healthcare decisions. The software processes input locally in the analysis function; deployments, notebooks, or surrounding applications may have their own data handling and retention behavior, which you should review separately.
-
-## Version and project information
+## Project information
 
 - Project name: GENE CRISpy
 - Python import/package name: `genecrispy`
