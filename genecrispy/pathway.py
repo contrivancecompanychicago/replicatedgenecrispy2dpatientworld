@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -11,10 +12,16 @@ from typing import Any
 _PATHWAY_ID = re.compile(r"^hsa\d{5}$")
 _MAX_KGML_BYTES = 1024 * 1024
 _PATHWAY_DIR = Path(__file__).resolve().parent.parent / "data" / "pathways"
+_SCHEMA_PATH = Path(__file__).resolve().parent.parent / "data" / "schemas" / "pathway-response.schema.json"
 
 
 class PathwayNotFoundError(FileNotFoundError):
     """Raised when a pathway is not bundled with the application."""
+
+
+def load_pathway_schema() -> dict[str, Any]:
+    """Load the JSON Schema describing pathway API responses."""
+    return json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def load_pathway(pathway_id: str) -> dict[str, Any]:
@@ -34,13 +41,12 @@ def load_pathway(pathway_id: str) -> dict[str, Any]:
     # omits the KEGG DOCTYPE, so parsing is offline and deterministic.
     root = ET.fromstring(raw)
     entries: list[dict[str, Any]] = []
-    entry_ids: set[str] = set()
     for element in root.findall("entry"):
         graphics = element.find("graphics")
         item: dict[str, Any] = {
             "id": element.get("id", ""),
             "name": element.get("name", ""),
-            "type": element.get("type", ""),
+            "type": element.get("type", "other"),
         }
         if graphics is not None:
             item["label"] = graphics.get("name", item["name"])
@@ -49,14 +55,13 @@ def load_pathway(pathway_id: str) -> dict[str, Any]:
                 if value is not None:
                     item[key] = int(value)
         entries.append(item)
-        entry_ids.add(item["id"])
 
     relations = []
     for element in root.findall("relation"):
         relations.append({
             "entry1": element.get("entry1", ""),
             "entry2": element.get("entry2", ""),
-            "type": element.get("type", ""),
+            "type": element.get("type", "other"),
             "subtypes": [
                 {"name": subtype.get("name", ""), "value": subtype.get("value", "")}
                 for subtype in element.findall("subtype")
@@ -131,4 +136,4 @@ def render_pathway_html(pathway: dict[str, Any]) -> str:
     )
 
 
-__all__ = ["PathwayNotFoundError", "load_pathway", "render_pathway_html", "render_pathway_svg"]
+__all__ = ["PathwayNotFoundError", "load_pathway", "load_pathway_schema", "render_pathway_html", "render_pathway_svg"]

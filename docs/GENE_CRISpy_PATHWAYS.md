@@ -1,9 +1,39 @@
-# GENE CRISpy 0.2.0
+# GENE CRISpy pathway API and Colab display
 
-GENE CRISpy is a Python package and local analysis service for **descriptive analysis** of genetic sequence text and molecular structure coordinate text. This guide is written for first-time users [...]
+The API bundles a compact, offline KGML excerpt for the human KEGG Type II diabetes mellitus pathway (`hsa04930`). All pathway routes use the `/genecrispy/pathways` namespace:
 
-> **Important: GENE CRISpy 0.2.0 is not an AI model or an AI-powered interpretation system.** The current analyzer uses deterministic Python code to summarize supported FASTA and PDB text. It does [...]
+- `GET /genecrispy/pathways/hsa04930` returns pathway metadata, entries, and relations as JSON.
+- `GET /genecrispy/pathways/hsa04930/render` returns a self-contained HTML page containing an SVG graph.
+- `GET /genecrispy/pathways/schema` returns the JSON Schema for pathway responses, including relation endpoints and subtype fields. The schema is also stored at `data/schemas/pathway-response.schema.json`.
 
-## KEGG pathway API
+KGML relations use `entry1` and `entry2` identifiers that reference `entries[].id`; their `type` identifies the KGML relation class, and `subtypes` carry details such as activation, inhibition, or phosphorylation. A relation may connect genes, compounds, or other pathway entries, so the schema describes KGML pathway relationships rather than asserting every relation is gene-to-gene. The schema validates structure; it does not currently enforce that every relationship endpoint resolves to an entry ID.
 
-A compact, offline KGML excerpt for the human Type II diabetes pathway is bundled for read-only exploration. `GET /pathways/hsa04930` returns its entries and relationships as JSON; `GET /pathways/hsa04930/render` serves an SVG visualization that can be displayed in Google Colab. See [the pathway and Colab guide](docs/GENE_CRISpy_PATHWAYS.md) for a notebook snippet and limitations. This is reference data, not patient-specific interpretation.
+The bundled KGML excerpt is for pathway exploration only. The graph is reference visualization, not patient-specific data, a risk prediction, or clinical interpretation. Only pathways present under `data/pathways/` are available. The parser limits XML size and validates IDs; it does not fetch KEGG or external DTDs at request time.
+
+## Display the graph in Google Colab
+
+The API must be running at a URL reachable from the Colab runtime. Colab cannot reach a server running only on your laptop's `localhost`.
+
+```python
+import requests
+from IPython.display import HTML, display
+
+API_BASE = "https://your-reachable-api.example"  # no trailing slash
+response = requests.get(
+    f"{API_BASE}/genecrispy/pathways/hsa04930/render", timeout=30
+)
+response.raise_for_status()
+display(HTML(response.text))
+```
+
+To inspect the structured pathway data and schema:
+
+```python
+pathway = requests.get(
+    f"{API_BASE}/genecrispy/pathways/hsa04930", timeout=30
+).json()
+schema = requests.get(f"{API_BASE}/genecrispy/pathways/schema", timeout=30).json()
+print(pathway["title"], pathway["gene_count"], pathway["relation_count"])
+```
+
+Do not put patient identifiers or private genomic/clinical data in these requests. These routes serve static reference data and do not accept or analyze patient information.

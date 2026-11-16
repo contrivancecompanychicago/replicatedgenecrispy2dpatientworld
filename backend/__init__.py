@@ -11,7 +11,12 @@ from pydantic import BaseModel, Field
 
 from patientworld.firebase_backend import PatientWorldFirestoreClient, predict_patient_record
 from patientworld.genecrispy_agent import GeneCrispyAgent
-from genecrispy.pathway import PathwayNotFoundError, load_pathway, render_pathway_html
+from genecrispy.pathway import (
+    PathwayNotFoundError,
+    load_pathway,
+    load_pathway_schema,
+    render_pathway_html,
+)
 
 app = FastAPI(title="GENE CRISpy", version="0.2.0", description="GENE CRISpy genetic and molecular structure analysis API")
 
@@ -80,7 +85,13 @@ def analyze_genecrispy(payload: GeneCrispyAnalysisRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@app.get("/pathways/{pathway_id}")
+@app.get("/genecrispy/pathways/schema")
+def get_pathway_schema() -> Dict[str, Any]:
+    """Return the JSON Schema for pathway summaries and KGML relationships."""
+    return load_pathway_schema()
+
+
+@app.get("/genecrispy/pathways/{pathway_id}")
 def get_pathway(pathway_id: str) -> Dict[str, Any]:
     """Return descriptive metadata, entries, and relations for a bundled KEGG pathway."""
     try:
@@ -91,7 +102,7 @@ def get_pathway(pathway_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@app.get("/pathways/{pathway_id}/render", response_class=HTMLResponse)
+@app.get("/genecrispy/pathways/{pathway_id}/render", response_class=HTMLResponse)
 def render_pathway(pathway_id: str) -> HTMLResponse:
     """Return a self-contained SVG pathway page that can be displayed in Colab."""
     try:
